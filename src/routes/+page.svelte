@@ -48,7 +48,6 @@
         const coords = JSON.parse(ev.data)["coordinates"];
         const x = coords[0];
         const y = coords[1];
-        console.debug(ev.data)
         pushBlob(id, [x, y]);
       } catch (e) {
         console.error(e);
@@ -235,9 +234,7 @@
     // ---------- draw each pair of blobs from blobCoordinates ----------
     $effect(() => {
       clearLayers();
-      console.debug(blobCoordinates);
       Object.values(blobCoordinates).forEach((item) => {
-        console.debug(item);
         const coords = item["coordinates"];
         const x = coords[0];
         const y = coords[1];
