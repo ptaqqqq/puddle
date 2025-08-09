@@ -59,6 +59,27 @@
     };
   });
 
+  // Stable FNV-1a → hue in [0,1)
+  function hueFromUUID(id: string) {
+    let h = 0x811c9dc5; // FNV offset basis
+    for (let i = 0; i < id.length; i++) {
+      h ^= id.charCodeAt(i);
+      h = Math.imul(h, 0x01000193); // FNV prime
+    }
+    return (h >>> 0) / 0xffffffff;
+  }
+
+  const hueById = new Map<string, number>();
+
+  function getHue(id: string) {
+    let h = hueById.get(id);
+    if (h == null) {
+      h = hueFromUUID(id);
+      hueById.set(id, h);
+    }
+    return h;
+  }
+
   let canvas: HTMLCanvasElement;
 
   onMount(() => {
@@ -103,6 +124,14 @@
     uniform sampler2D u_layers;
     uniform int       u_count;
 
+    vec3 hsv2rgb(float h, float s, float v){
+      float r = abs(h * 6.0 - 3.0) - 1.0;
+      float g = 2.0 - abs(h * 6.0 - 2.0);
+      float b = 2.0 - abs(h * 6.0 - 4.0);
+      vec3  rgb = clamp(vec3(r,g,b), 0.0, 1.0);
+      return v * mix(vec3(1.0), rgb, s);
+    }
+
     // isotropic distance (correct for aspect so circles stay round)
     float blob(vec2 uv, vec2 c, float r, float aspect){
       vec2 d = vec2((uv.x - c.x) * aspect, uv.y - c.y);
@@ -122,7 +151,7 @@
         // Each texel holds (x, y, r, w)
         vec4 L = texelFetch(u_layers, ivec2(i, 0), 0);
         float b = blob(uv, L.xy, L.z, aspect);
-        acc += vec3(b) * L.w;
+        acc += hsv2rgb(L.w, 1.0, 1.0) * b;
       }
       outColor = vec4(acc, 1.0);
     }`;
@@ -212,7 +241,7 @@
         const x = coords[0];
         const y = coords[1];
         const idx = Math.min(layerCount, MAX_LAYERS - 1);
-        setLayer(idx, x, y, 0.12, 1.0);
+        setLayer(idx, x, y, 0.12, getHue(item.uuid));
       });
     });
 
