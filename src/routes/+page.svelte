@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { v4 as uuidv4 } from 'uuid';
 
-  const uuid = crypto.randomUUID(); 
+  let uuid = uuidv4();
 
   let blobCoordinates = $state([{ "uuid": "void", "coordinates": [-2.5, -2.5] }]);
 
@@ -17,7 +18,7 @@
 
   function wsUrl(path = '/ws') {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${proto}://${location.hostname}:3000${path}`;
+    return `${proto}://${location.host}${path}`;
   }
 
   function handlePointer(e: PointerEvent) {
@@ -276,4 +277,4 @@
   });
 </script>
 
-<canvas bind:this={canvas} onpointermove={handlePointer} style="display:block;width:100vw;height:100vh;"></canvas>
+<canvas bind:this={canvas} onpointermove={handlePointer} style="display:block;width:100vw;height:100vh;margin:0;padding:0;"></canvas>

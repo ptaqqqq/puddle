@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: puddle-web
+    ports:
+      - "${FRONTEND_PORT}:3000"
+      - "${BACKEND_PORT}:3001"
+    environment:
+      NODE_ENV: production

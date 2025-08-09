@@ -22,7 +22,9 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-node": "^5.2.14",
+		"buildx": "^0.1.1",
 		"save-dev": "^0.0.1-security",
+		"uuid": "^11.1.0",
 		"ws": "^8.18.3"
 	}
 }

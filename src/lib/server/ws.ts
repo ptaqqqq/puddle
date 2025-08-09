@@ -3,7 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 
 let wss: WebSocketServer | null = null;
 
-export function initWSSOnPort(port = 3000) {
+export function initWSSOnPort(port = 3001) {
   if (wss) return wss; // singleton
 
   wss = new WebSocketServer({ port });
