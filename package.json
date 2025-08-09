@@ -1,0 +1,17 @@
+{
+  "name": "yes",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite dev",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "svelte": "^3.0.0",
+    "ws": "^8.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "latest",
+    "vite": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

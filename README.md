@@ -1,0 +1,1 @@
+The actuall code is drowing some dots u can just remove the functions and cutom it as u want to use it in frontend.
