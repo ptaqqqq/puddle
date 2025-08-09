@@ -3,6 +3,8 @@
 
   let canvas: HTMLCanvasElement;
 
+  let blobCoordinates = $state([[0.1, 0.1], [0.3, 0.3], [0.5, 0.5]]);
+
   onMount(() => {
     const gl = canvas.getContext('webgl2')!;
 
@@ -139,38 +141,13 @@
       layerDirty = false;
     }
 
-    // ---------- demo: mouse moves layer 0, click to add new layer ----------
-    let active = 0;
-    canvas.addEventListener('pointermove', (e) => {
-      const r = canvas.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const y = 1 - (e.clientY - r.top) / r.height;
-      // keep radius/weight as-is; just move
-      const base = active * 4;
-      const r0 = layerData[base + 2] || 0.12;
-      const w0 = layerData[base + 3] || 1.0;
-      setLayer(active, x, y, r0, w0);
+    // ---------- draw each pair of blobs from blobCoordinates ----------
+    $effect(() => {
+      blobCoordinates.forEach(coords => {
+        const idx = Math.min(layerCount, MAX_LAYERS - 1);
+        setLayer(idx, coords[0], coords[1], 0.12, 1.0)
+      });
     });
-    canvas.addEventListener('click', (e) => {
-      const r = canvas.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const y = 1 - (e.clientY - r.top) / r.height;
-      const idx = Math.min(layerCount, MAX_LAYERS - 1);
-      setLayer(idx, x, y, 0.12, 1.0);
-      active = idx;
-    });
-    // quick radius tweak with keyboard
-    const key = (e: KeyboardEvent) => {
-      const base = active * 4;
-      let rad = layerData[base + 2] || 0.12;
-      if (e.key === '[') rad = Math.max(0.005, rad * 0.9);
-      if (e.key === ']') rad = Math.min(0.9, rad / 0.9);
-      setLayer(active, layerData[base], layerData[base + 1], rad, layerData[base + 3] || 1.0);
-    };
-    window.addEventListener('keydown', key);
-
-    // seed one layer in the center
-    setLayer(0, 0.5, 0.5, 0.12, 1.0);
 
     // ---------- render loop ----------
     const t0 = performance.now();
@@ -194,7 +171,6 @@
     onDestroy(() => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('keydown', key);
     });
   });
 </script>
