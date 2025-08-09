@@ -1,9 +1,65 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
 
-  let canvas: HTMLCanvasElement;
+  const uuid = crypto.randomUUID(); 
 
-  let blobCoordinates = $state([[0.1, 0.1], [0.3, 0.3], [0.5, 0.5]]);
+  let blobCoordinates = $state([{ "uuid": "void", "coordinates": [-2.5, -2.5] }]);
+
+  function pushBlob(id: string, blob: [number, number]) {
+    blobCoordinates = blobCoordinates.filter(entry => entry.uuid !== id);
+    blobCoordinates.push({ "uuid": id, "coordinates": blob });
+    // setTimeout(() => {
+      // delete blobCoordinates[uuid];
+    // }, 100);
+  }
+
+  let ws: WebSocket;
+
+  function wsUrl(path = '/ws') {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${proto}://${location.hostname}:3000${path}`;
+  }
+
+  function handlePointer(e: PointerEvent) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = 1 - (e.clientY - rect.top) / rect.height;
+
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: 'pointermove',
+          uuid,
+          coordinates: [x, y],
+        })
+      );
+    } else {
+      console.warn('WebSocket not open');
+    }
+  }
+
+
+  onMount(() => {
+    ws = new WebSocket(wsUrl());
+    ws.onmessage = (ev) => {
+      try {
+        const id = JSON.parse(ev.data)["uuid"];
+        const coords = JSON.parse(ev.data)["coordinates"];
+        const x = coords[0];
+        const y = coords[1];
+        console.debug(ev.data)
+        pushBlob(id, [x, y]);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    return () => {
+      ws?.close();
+    };
+  });
+
+  let canvas: HTMLCanvasElement;
 
   onMount(() => {
     const gl = canvas.getContext('webgl2')!;
@@ -124,6 +180,11 @@
       if (i >= layerCount) layerCount = i + 1;
       layerDirty = true;
     }
+    function clearLayers(hard = false) {
+      if (hard) layerData.fill(0); // optional: zero memory
+      layerDirty = true;
+      layerCount = 0;          // nothing is active
+    }
     function uploadLayers() {
       if (!layerDirty) return;
       gl.activeTexture(gl.TEXTURE0);
@@ -143,9 +204,15 @@
 
     // ---------- draw each pair of blobs from blobCoordinates ----------
     $effect(() => {
-      blobCoordinates.forEach(coords => {
+      clearLayers();
+      console.debug(blobCoordinates);
+      Object.values(blobCoordinates).forEach((item) => {
+        console.debug(item);
+        const coords = item["coordinates"];
+        const x = coords[0];
+        const y = coords[1];
         const idx = Math.min(layerCount, MAX_LAYERS - 1);
-        setLayer(idx, coords[0], coords[1], 0.12, 1.0)
+        setLayer(idx, x, y, 0.12, 1.0);
       });
     });
 
@@ -153,6 +220,11 @@
     const t0 = performance.now();
     let raf = 0;
     function frame() {
+      // Always clear first so previous frame doesn’t linger
+      gl.disable(gl.SCISSOR_TEST);
+      gl.clearColor(0, 0, 0, 0.0); // transparent background; change if you want
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
       uploadLayers();
 
       gl.useProgram(prog);
@@ -175,4 +247,4 @@
   });
 </script>
 
-<canvas bind:this={canvas} style="display:block;width:100vw;height:100vh;"></canvas>
+<canvas bind:this={canvas} onpointermove={handlePointer} style="display:block;width:100vw;height:100vh;"></canvas>
